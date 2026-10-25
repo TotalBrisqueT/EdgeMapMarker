@@ -1,0 +1,58 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <AssemblyName>EdgeMapMarker</AssemblyName>
+    <RootNamespace>EdgeMapMarker</RootNamespace>
+    <Version>0.1.0</Version>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <!-- The game's DLLs reference newer framework facade versions than netstandard2.1 ships; harmless at runtime. -->
+    <NoWarn>$(NoWarn);MSB3277</NoWarn>
+  </PropertyGroup>
+
+  <!--
+    Where the game and the r2modman test profile live. Override either one with
+    `dotnet build -p:ValheimDir=...` or `-p:ProfileDir=...` if yours differ.
+  -->
+  <PropertyGroup>
+    <ValheimDir Condition="'$(ValheimDir)' == ''">C:\Program Files (x86)\Steam\steamapps\common\Valheim</ValheimDir>
+    <ProfileDir Condition="'$(ProfileDir)' == ''">$(APPDATA)\r2modmanPlus-local\Valheim\profiles\Dev</ProfileDir>
+    <ManagedDir>$(ValheimDir)\valheim_Data\Managed</ManagedDir>
+    <BepInExCoreDir>$(ProfileDir)\BepInEx\core</BepInExCoreDir>
+    <PluginDeployDir>$(ProfileDir)\BepInEx\plugins\EdgeMapMarker</PluginDeployDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Makes the game's private fields and methods accessible at compile time. -->
+    <PackageReference Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.4.2" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="BepInEx" HintPath="$(BepInExCoreDir)\BepInEx.dll" Private="false" />
+    <Reference Include="0Harmony" HintPath="$(BepInExCoreDir)\0Harmony.dll" Private="false" />
+
+    <Reference Include="assembly_valheim" HintPath="$(ManagedDir)\assembly_valheim.dll" Private="false" Publicize="true" />
+    <Reference Include="assembly_utils" HintPath="$(ManagedDir)\assembly_utils.dll" Private="false" />
+    <Reference Include="assembly_guiutils" HintPath="$(ManagedDir)\assembly_guiutils.dll" Private="false" />
+
+    <Reference Include="UnityEngine" HintPath="$(ManagedDir)\UnityEngine.dll" Private="false" />
+    <Reference Include="UnityEngine.CoreModule" HintPath="$(ManagedDir)\UnityEngine.CoreModule.dll" Private="false" />
+    <Reference Include="UnityEngine.UI" HintPath="$(ManagedDir)\UnityEngine.UI.dll" Private="false" />
+    <Reference Include="UnityEngine.UIModule" HintPath="$(ManagedDir)\UnityEngine.UIModule.dll" Private="false" />
+    <Reference Include="UnityEngine.InputLegacyModule" HintPath="$(ManagedDir)\UnityEngine.InputLegacyModule.dll" Private="false" />
+    <Reference Include="UnityEngine.TextRenderingModule" HintPath="$(ManagedDir)\UnityEngine.TextRenderingModule.dll" Private="false" />
+    <Reference Include="Unity.TextMeshPro" HintPath="$(ManagedDir)\Unity.TextMeshPro.dll" Private="false" />
+  </ItemGroup>
+
+  <!-- After every build, copy the DLL into the r2modman Dev profile so the next game launch picks it up. -->
+  <Target Name="DeployToProfile" AfterTargets="Build" Condition="Exists('$(ProfileDir)\BepInEx')">
+    <MakeDir Directories="$(PluginDeployDir)" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(PluginDeployDir)" />
+    <Message Importance="high" Text="Deployed $(TargetFileName) to $(PluginDeployDir)" />
+  </Target>
+
+</Project>
