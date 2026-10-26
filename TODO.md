@@ -26,10 +26,16 @@ What follows from that:
 - [x] Distance label (m / km)
 - [x] Marker size setting (default 0.7)
 - [ ] Make the marker easier to see (outline or tint) and keep it clear of the biome name on the top edge
-- [ ] Track any pin (modifier + click on the large map), saved per character and world, by position and type
-- [ ] Decide what happens to a tracked shared pin when the map's "shared pins" toggle is off
+- [x] Track any pin (Alt + click on the large map), saved per character and world, by position and type
+- [x] Track several pins at once; home tracked alongside them and toggleable per world
+- [x] Mark tracked pins on the maps (corner badge, ring as an alternative style)
+- [x] Decide what happens to a tracked shared pin when the map's "shared pins" toggle is off (keeps tracking)
+- [ ] Test tracking a pin shared through SharedMap
+- [ ] Two quick Alt+clicks may open the game's "name a new pin" box; block it if it happens
+- [ ] Option to show the distance only on the nearest marker, since labels overlap when pins share a direction
 - [ ] Track another player (their map position, when they share it)
 - [x] Config toggles: icon, arrow, distance, size
-- [ ] More config: opacity, color, units, track key, bed fallback, hide in dungeons
+- [x] Config: track key, track home by default, highlight on/off, style and color
+- [ ] More config: marker opacity and color, units, hide in dungeons
 - [ ] Thunderstore packaging: manifest, README, icon, zip
 - [ ] Settle on the mod name ("Edge Map Marker" is a working name)

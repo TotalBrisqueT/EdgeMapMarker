@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using HarmonyLib;
 using TMPro;
 using UnityEngine;
@@ -5,8 +6,8 @@ using UnityEngine.UI;
 
 namespace EdgeMapMarker
 {
-    // Draws the target's icon, an outward arrow and the distance on the edge of the small minimap
-    // when the target is outside its view.
+    // For each target outside the small minimap's view, draws its icon, an outward arrow and the distance
+    // on the minimap edge.
     [HarmonyPatch(typeof(Minimap), nameof(Minimap.Update))]
     internal static class EdgeMarker
     {
@@ -19,10 +20,19 @@ namespace EdgeMapMarker
         private const float ArrowSize = 14f;
         private const float LabelFontSize = 14f;
 
+        // One icon + arrow + label set, reused from frame to frame.
+        private class MarkerView
+        {
+            public RectTransform Icon;
+            public Image IconImage;
+            public RectTransform Arrow;
+            public TMP_Text Label;
+        }
+
         private static RectTransform _root;
-        private static RectTransform _icon;
-        private static RectTransform _arrow;
-        private static TMP_Text _label;
+        private static Sprite _arrowSprite;
+        private static readonly List<MarkerView> Views = new List<MarkerView>();
+        private static readonly List<PinTracker.Target> Targets = new List<PinTracker.Target>();
 
         private static void Postfix(Minimap __instance)
         {
@@ -33,55 +43,66 @@ namespace EdgeMapMarker
                 return;
             }
 
-            EnsureMarker(__instance);
+            EnsureRoot(__instance);
+            SetActive(_root, true);
+            PinTracker.GetTargets(__instance, Targets);
 
-            Vector3 target = GetHomePosition();
             RawImage map = __instance.m_mapImageSmall;
             Rect rect = map.rectTransform.rect;
-
-            // Same world -> minimap conversion the game uses for its own pins.
-            __instance.WorldToMapPoint(target, out float mx, out float my);
-            Vector2 pos = __instance.MapPointToLocalGuiPos(mx, my, map.uvRect, rect);
-
             Vector2 center = new Vector2(rect.width / 2f, rect.height / 2f);
-            Vector2 offset = pos - center;
-
-            // Inside the minimap: the game's own pin is visible, so stay hidden.
-            if (Mathf.Abs(offset.x) <= center.x && Mathf.Abs(offset.y) <= center.y)
-            {
-                SetActive(_root, false);
-                return;
-            }
-
-            SetActive(_root, true);
 
             // Scaling each element and its gap from the edge together keeps the layout's proportions.
             float scale = Plugin.MarkerScale.Value;
             Vector3 elementScale = new Vector3(scale, scale, 1f);
 
-            SetActive(_icon, Plugin.ShowIcon.Value);
-            _icon.localScale = elementScale;
-            _icon.anchoredPosition = center + ClampToEdge(offset, center, IconInset * scale);
-
-            SetActive(_arrow, Plugin.ShowArrow.Value);
-            _arrow.localScale = elementScale;
-            _arrow.anchoredPosition = center + ClampToEdge(offset, center, ArrowInset * scale);
-            _arrow.localRotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(offset.y, offset.x) * Mathf.Rad2Deg - 90f);
-
-            SetActive(_label.rectTransform, Plugin.ShowDistance.Value);
-            _label.rectTransform.localScale = elementScale;
-            _label.rectTransform.anchoredPosition = center + ClampToEdge(offset, center, LabelInset * scale);
-            if (Plugin.ShowDistance.Value)
+            int used = 0;
+            foreach (PinTracker.Target target in Targets)
             {
-                _label.text = FormatDistance(Utils.DistanceXZ(player.transform.position, target));
-            }
-        }
+                // Same world -> minimap conversion the game uses for its own pins.
+                __instance.WorldToMapPoint(target.Position, out float mx, out float my);
+                Vector2 offset = __instance.MapPointToLocalGuiPos(mx, my, map.uvRect, rect) - center;
 
-        // Bed spawn if the player has one in this world, otherwise the world spawn.
-        private static Vector3 GetHomePosition()
-        {
-            PlayerProfile profile = Game.instance.GetPlayerProfile();
-            return profile.HaveCustomSpawnPoint() ? profile.GetCustomSpawnPoint() : profile.GetHomePoint();
+                // Inside the minimap: the game's own pin is visible, so no edge marker.
+                if (Mathf.Abs(offset.x) <= center.x && Mathf.Abs(offset.y) <= center.y)
+                {
+                    continue;
+                }
+
+                if (used == Views.Count)
+                {
+                    Views.Add(CreateView(__instance));
+                }
+                MarkerView view = Views[used++];
+
+                SetActive(view.Icon, Plugin.ShowIcon.Value);
+                if (view.IconImage.sprite != target.Icon)
+                {
+                    view.IconImage.sprite = target.Icon;
+                }
+                view.Icon.localScale = elementScale;
+                view.Icon.anchoredPosition = center + ClampToEdge(offset, center, IconInset * scale);
+
+                SetActive(view.Arrow, Plugin.ShowArrow.Value);
+                view.Arrow.localScale = elementScale;
+                view.Arrow.anchoredPosition = center + ClampToEdge(offset, center, ArrowInset * scale);
+                view.Arrow.localRotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(offset.y, offset.x) * Mathf.Rad2Deg - 90f);
+
+                SetActive(view.Label.rectTransform, Plugin.ShowDistance.Value);
+                view.Label.rectTransform.localScale = elementScale;
+                view.Label.rectTransform.anchoredPosition = center + ClampToEdge(offset, center, LabelInset * scale);
+                if (Plugin.ShowDistance.Value)
+                {
+                    view.Label.text = FormatDistance(Utils.DistanceXZ(player.transform.position, target.Position));
+                }
+            }
+
+            // Hide views left over from frames with more off-map targets.
+            for (int i = used; i < Views.Count; i++)
+            {
+                SetActive(Views[i].Icon, false);
+                SetActive(Views[i].Arrow, false);
+                SetActive(Views[i].Label.rectTransform, false);
+            }
         }
 
         // Shrinks the offset, keeping its direction, until it touches a rectangle `inset` units inside the map edge.
@@ -100,12 +121,15 @@ namespace EdgeMapMarker
             return meters < 1000f ? $"{meters:0} m" : $"{meters / 1000f:0.0} km";
         }
 
-        private static void EnsureMarker(Minimap minimap)
+        private static void EnsureRoot(Minimap minimap)
         {
             if (_root != null)
             {
                 return;
             }
+
+            // The old minimap (and every view under it) is gone, e.g. after logging out.
+            Views.Clear();
 
             // An invisible container covering the same area as the game's pin layer, so everything inside
             // it uses the same coordinates as real pins.
@@ -116,36 +140,45 @@ namespace EdgeMapMarker
             _root.anchorMax = Vector2.one;
             _root.offsetMin = Vector2.zero;
             _root.offsetMax = Vector2.zero;
+        }
 
+        private static MarkerView CreateView(Minimap minimap)
+        {
+            MarkerView view = new MarkerView();
             RectTransform pinPrefab = (RectTransform)minimap.m_pinPrefab.transform;
 
             // Clone the game's pin prefab so the icon has the same anchors, size and look as real pins.
             GameObject icon = Object.Instantiate(minimap.m_pinPrefab, _root);
             icon.name = "Icon";
-            _icon = (RectTransform)icon.transform;
-            _icon.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, minimap.m_pinSizeSmall);
-            _icon.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, minimap.m_pinSizeSmall);
+            view.Icon = (RectTransform)icon.transform;
+            view.Icon.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, minimap.m_pinSizeSmall);
+            view.Icon.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, minimap.m_pinSizeSmall);
             icon.transform.Find("Checked")?.gameObject.SetActive(false);
-            Image iconImage = icon.GetComponent<Image>();
-            iconImage.sprite = minimap.GetSprite(Minimap.PinType.Bed);
-            iconImage.raycastTarget = false;
+            view.IconImage = icon.GetComponent<Image>();
+            view.IconImage.raycastTarget = false;
 
+            if (_arrowSprite == null)
+            {
+                _arrowSprite = CreateArrowSprite();
+            }
             GameObject arrow = NewChild("Arrow", _root, pinPrefab);
             Image arrowImage = arrow.AddComponent<Image>();
-            arrowImage.sprite = CreateArrowSprite();
+            arrowImage.sprite = _arrowSprite;
             arrowImage.raycastTarget = false;
-            _arrow = (RectTransform)arrow.transform;
-            _arrow.sizeDelta = new Vector2(ArrowSize, ArrowSize);
+            view.Arrow = (RectTransform)arrow.transform;
+            view.Arrow.sizeDelta = new Vector2(ArrowSize, ArrowSize);
 
             GameObject label = NewChild("Distance", _root, pinPrefab);
-            _label = label.AddComponent<TextMeshProUGUI>();
-            _label.font = minimap.m_biomeNameSmall.font;
-            _label.fontSharedMaterial = minimap.m_biomeNameSmall.fontSharedMaterial;
-            _label.fontSize = LabelFontSize;
-            _label.alignment = TextAlignmentOptions.Center;
-            _label.textWrappingMode = TextWrappingModes.NoWrap;
-            _label.raycastTarget = false;
-            _label.rectTransform.sizeDelta = new Vector2(80f, 20f);
+            view.Label = label.AddComponent<TextMeshProUGUI>();
+            view.Label.font = minimap.m_biomeNameSmall.font;
+            view.Label.fontSharedMaterial = minimap.m_biomeNameSmall.fontSharedMaterial;
+            view.Label.fontSize = LabelFontSize;
+            view.Label.alignment = TextAlignmentOptions.Center;
+            view.Label.textWrappingMode = TextWrappingModes.NoWrap;
+            view.Label.raycastTarget = false;
+            view.Label.rectTransform.sizeDelta = new Vector2(80f, 20f);
+
+            return view;
         }
 
         // A UI object anchored like a real pin, so its anchoredPosition uses the same coordinates.
