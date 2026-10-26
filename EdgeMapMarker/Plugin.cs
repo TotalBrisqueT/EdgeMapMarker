@@ -27,14 +27,4 @@ namespace EdgeMapMarker
             _harmony?.UnpatchSelf();
         }
     }
-
-    // Smoke test: proves Harmony patches reach the game's minimap. Replaced by the real marker in the next step.
-    [HarmonyPatch(typeof(Minimap), nameof(Minimap.Start))]
-    internal static class MinimapStartPatch
-    {
-        private static void Postfix(Minimap __instance)
-        {
-            Plugin.Log.LogInfo($"Minimap ready (small map root: {__instance.m_smallRoot?.name ?? "missing"})");
-        }
-    }
 }
