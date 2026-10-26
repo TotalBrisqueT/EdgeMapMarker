@@ -26,6 +26,7 @@ namespace EdgeMapMarker
             public RectTransform Icon;
             public Image IconImage;
             public RectTransform Arrow;
+            public Image ArrowImage;
             public TMP_Text Label;
         }
 
@@ -82,17 +83,28 @@ namespace EdgeMapMarker
                 view.Icon.localScale = elementScale;
                 view.Icon.anchoredPosition = center + ClampToEdge(offset, center, IconInset * scale);
 
+                // Players get their own colour on the arrow and name, if enabled.
+                bool isPlayer = target.PlayerName != null;
+                Color color = isPlayer && Plugin.ColorPlayers.Value ? PlayerTracker.ColorFor(target.PlayerName) : Color.white;
+
                 SetActive(view.Arrow, Plugin.ShowArrow.Value);
+                view.ArrowImage.color = color;
                 view.Arrow.localScale = elementScale;
                 view.Arrow.anchoredPosition = center + ClampToEdge(offset, center, ArrowInset * scale);
                 view.Arrow.localRotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(offset.y, offset.x) * Mathf.Rad2Deg - 90f);
 
-                SetActive(view.Label.rectTransform, Plugin.ShowDistance.Value);
+                bool showName = isPlayer && Plugin.ShowPlayerNames.Value;
+                bool showLabel = showName || Plugin.ShowDistance.Value;
+                SetActive(view.Label.rectTransform, showLabel);
                 view.Label.rectTransform.localScale = elementScale;
                 view.Label.rectTransform.anchoredPosition = center + ClampToEdge(offset, center, LabelInset * scale);
-                if (Plugin.ShowDistance.Value)
+                if (showLabel)
                 {
-                    view.Label.text = FormatDistance(Utils.DistanceXZ(player.transform.position, target.Position));
+                    string distance = Plugin.ShowDistance.Value
+                        ? FormatDistance(Utils.DistanceXZ(player.transform.position, target.Position))
+                        : "";
+                    view.Label.text = showName ? (target.PlayerName + " " + distance).TrimEnd() : distance;
+                    view.Label.color = color;
                 }
             }
 
@@ -165,6 +177,7 @@ namespace EdgeMapMarker
             Image arrowImage = arrow.AddComponent<Image>();
             arrowImage.sprite = _arrowSprite;
             arrowImage.raycastTarget = false;
+            view.ArrowImage = arrowImage;
             view.Arrow = (RectTransform)arrow.transform;
             view.Arrow.sizeDelta = new Vector2(ArrowSize, ArrowSize);
 
@@ -176,7 +189,7 @@ namespace EdgeMapMarker
             view.Label.alignment = TextAlignmentOptions.Center;
             view.Label.textWrappingMode = TextWrappingModes.NoWrap;
             view.Label.raycastTarget = false;
-            view.Label.rectTransform.sizeDelta = new Vector2(80f, 20f);
+            view.Label.rectTransform.sizeDelta = new Vector2(160f, 20f);
 
             return view;
         }

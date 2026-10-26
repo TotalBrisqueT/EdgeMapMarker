@@ -30,10 +30,13 @@ What follows from that:
 - [x] Track several pins at once; home tracked alongside them and toggleable per world
 - [x] Mark tracked pins on the maps (corner badge, ring as an alternative style)
 - [x] Decide what happens to a tracked shared pin when the map's "shared pins" toggle is off (keeps tracking)
-- [ ] Test tracking a pin shared through SharedMap
+- [x] SharedMap compatibility checked against its code; hiding the shared map no longer drops tracking of public markers
+- [ ] Test tracking a pin shared through SharedMap (public marker), including toggling "Server shared map" off and on
 - [ ] Two quick Alt+clicks may open the game's "name a new pin" box; block it if it happens
 - [ ] Option to show the distance only on the nearest marker, since labels overlap when pins share a direction
-- [ ] Track another player (their map position, when they share it)
+- [x] Track another player (their map position, when they share it), with name and a name-based colour
+- [ ] Test player tracking in a group session: everyone "Visible on map", same colours on every screen
+- [ ] If two of us get the same colour: per-player colour setting shared via the mod, or tweak the calculation
 - [x] Config toggles: icon, arrow, distance, size
 - [x] Config: track key, track home by default, highlight on/off, style and color
 - [ ] More config: marker opacity and color, units, hide in dungeons

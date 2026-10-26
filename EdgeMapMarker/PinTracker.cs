@@ -13,14 +13,21 @@ namespace EdgeMapMarker
         private const string SaveKeyPrefix = "EdgeMapMarker.Tracked.";
         private const string HomeKeyPrefix = "EdgeMapMarker.Home.";
 
-        // How long a removed tracked pin may take to reappear before tracking is dropped. Some mods
-        // (e.g. shared-map mods) replace pins by removing and re-adding them.
+        // How long a pin the player deleted may take to reappear before tracking is dropped. Some mods
+        // (e.g. SharedMap) replace pins by removing and re-adding them.
         private const float RemovalGraceSeconds = 2f;
+
+        // True while the game handles the player deleting a pin from the map (right-click). Pins removed
+        // any other way (e.g. SharedMap hiding public markers) stay tracked and relink when they return.
+        private static bool _userRemoving;
 
         public struct Target
         {
             public Vector3 Position;
             public Sprite Icon;
+
+            // Set when the target is another player.
+            public string PlayerName;
         }
 
         private class Entry
@@ -34,7 +41,7 @@ namespace EdgeMapMarker
         private static readonly List<Entry> Entries = new List<Entry>();
         private static Minimap _loadedFor;
 
-        // Fills `targets` with home (if tracked) and every tracked pin.
+        // Fills `targets` with home (if tracked), every tracked pin and every tracked player who is visible.
         public static void GetTargets(Minimap minimap, List<Target> targets)
         {
             targets.Clear();
@@ -52,9 +59,12 @@ namespace EdgeMapMarker
                     targets.Add(new Target { Position = entry.Pin.m_pos, Icon = entry.Pin.m_icon });
                 }
             }
+
+            PlayerTracker.AddTargets(minimap, targets);
         }
 
-        // Fills `pins` with the map pins that are tracked, including the bed pin when home is tracked.
+        // Fills `pins` with the map pins that are tracked, including the bed pin when home is tracked and
+        // the pins of tracked players.
         public static void GetTrackedPins(Minimap minimap, List<Minimap.PinData> pins)
         {
             pins.Clear();
@@ -72,6 +82,8 @@ namespace EdgeMapMarker
                     pins.Add(entry.Pin);
                 }
             }
+
+            PlayerTracker.AddTrackedPins(minimap, pins);
         }
 
         // Bed spawn if the player has one in this world, otherwise the world spawn.
@@ -230,8 +242,9 @@ namespace EdgeMapMarker
             }
         }
 
-        // Track-key + left click on the large map starts or stops tracking the pin under the cursor.
-        // Clicking near the spawn point toggles home, since the game doesn't let the bed pin be clicked.
+        // Track-key + left click on the large map starts or stops tracking whatever is closest to the cursor:
+        // a pin, another player, or home (the spawn point). The game doesn't let the bed pin or player pins
+        // be clicked, so those two are found by distance here.
         [HarmonyPatch(typeof(Minimap), nameof(Minimap.OnMapLeftClick))]
         private static class TrackClickPatch
         {
@@ -244,10 +257,24 @@ namespace EdgeMapMarker
 
                 float radius = __instance.PinInteractRadius;
                 Vector3 pos = __instance.ScreenToWorldPoint(ZInput.pointerPosition);
-                Minimap.PinData pin = __instance.GetClosestPin(pos, radius);
-                float homeDistance = Utils.DistanceXZ(pos, GetHomePosition());
 
-                if (homeDistance < radius && (pin == null || homeDistance < Utils.DistanceXZ(pos, pin.m_pos)))
+                Minimap.PinData pin = __instance.GetClosestPin(pos, radius);
+                float pinDistance = pin != null ? Utils.DistanceXZ(pos, pin.m_pos) : float.MaxValue;
+                float homeDistance = Utils.DistanceXZ(pos, GetHomePosition());
+                if (homeDistance >= radius)
+                {
+                    homeDistance = float.MaxValue;
+                }
+                if (!PlayerTracker.TryFindClosest(pos, radius, out string playerName, out float playerDistance))
+                {
+                    playerDistance = float.MaxValue;
+                }
+
+                if (playerDistance < pinDistance && playerDistance < homeDistance)
+                {
+                    PlayerTracker.Toggle(__instance, playerName);
+                }
+                else if (homeDistance < pinDistance)
                 {
                     ToggleHome(__instance);
                 }
@@ -265,17 +292,38 @@ namespace EdgeMapMarker
         [HarmonyPatch(typeof(Minimap), nameof(Minimap.RemovePin), typeof(Minimap.PinData))]
         private static class RemovePinPatch
         {
-            private static void Postfix(Minimap.PinData pin)
+            // __runOriginal is false when another mod's prefix blocked the removal (SharedMap does this for
+            // public markers you aren't allowed to delete), so the pin is still there.
+            private static void Postfix(Minimap.PinData pin, bool __runOriginal)
             {
+                if (pin == null || !__runOriginal)
+                {
+                    return;
+                }
                 foreach (Entry entry in Entries)
                 {
-                    if (pin != null && entry.Pin == pin)
+                    if (entry.Pin == pin)
                     {
                         entry.Position = pin.m_pos;
                         entry.Pin = null;
-                        entry.RemovedAt = Time.time;
+                        entry.RemovedAt = _userRemoving ? Time.time : -1f;
                     }
                 }
+            }
+        }
+
+        // The player's right-click delete goes through this overload; other removals call RemovePin(PinData) directly.
+        [HarmonyPatch(typeof(Minimap), nameof(Minimap.RemovePin), typeof(Vector3), typeof(float))]
+        private static class UserRemovePinPatch
+        {
+            private static void Prefix()
+            {
+                _userRemoving = true;
+            }
+
+            private static void Finalizer()
+            {
+                _userRemoving = false;
             }
         }
     }

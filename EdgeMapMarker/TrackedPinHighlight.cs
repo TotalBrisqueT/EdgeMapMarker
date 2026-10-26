@@ -94,8 +94,20 @@ namespace EdgeMapMarker
                     highlight = new Highlight { Image = Create(pin.m_uiElement, style), Style = style };
                     Highlights[pin] = highlight;
                 }
-                highlight.Image.color = color;
+                highlight.Image.color = PinColor(pin, color);
             }
+        }
+
+        // Player pins use the player's colour (keeping the highlight's transparency) so they match their edge marker.
+        private static Color PinColor(Minimap.PinData pin, Color highlight)
+        {
+            if (pin.m_type != Minimap.PinType.Player || !Plugin.ColorPlayers.Value || string.IsNullOrEmpty(pin.m_name))
+            {
+                return highlight;
+            }
+            Color color = PlayerTracker.ColorFor(pin.m_name);
+            color.a = highlight.a;
+            return color;
         }
 
         // A child of the pin, anchored to its edges, so it follows the pin's position and size (including

@@ -21,6 +21,8 @@ namespace EdgeMapMarker
         internal static ConfigEntry<float> MarkerScale;
         internal static ConfigEntry<KeyCode> TrackKey;
         internal static ConfigEntry<bool> TrackHomeByDefault;
+        internal static ConfigEntry<bool> ShowPlayerNames;
+        internal static ConfigEntry<bool> ColorPlayers;
         internal static ConfigEntry<bool> HighlightTracked;
         internal static ConfigEntry<HighlightStyle> HighlightStyleSetting;
         internal static ConfigEntry<Color> HighlightColor;
@@ -43,6 +45,12 @@ namespace EdgeMapMarker
             TrackHomeByDefault = Config.Bind("Tracking", "Track home by default", true,
                 "Track your bed (or the world spawn if you have no bed) in worlds where you haven't toggled it. " +
                 "Track-key + click near your spawn point on the large map to toggle it per world.");
+            ShowPlayerNames = Config.Bind("Players", "Show player names", true,
+                "Show a tracked player's name next to the distance on their edge marker.");
+            ColorPlayers = Config.Bind("Players", "Color players", true,
+                "Give each tracked player's arrow and name a colour picked from their character name, " +
+                "so everyone with the mod sees the same player in the same colour.");
+
             HighlightTracked = Config.Bind("Tracking", "Highlight tracked pins", true,
                 "Mark tracked pins on the large map and the minimap.");
             HighlightStyleSetting = Config.Bind("Tracking", "Highlight style", HighlightStyle.Badge,
