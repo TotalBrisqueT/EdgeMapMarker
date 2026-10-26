@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
@@ -6,12 +7,57 @@ using UnityEngine;
 
 namespace EdgeMapMarker
 {
-    // Which map pins the edge markers point at, plus whether home (the spawn point) is tracked. Saved in the
-    // character's custom data, per world. Pins are saved as type and position (they have no ID of their own).
+    // Where a tracked target is shown: on the minimap edge, as a HUD marker, or both.
+    [Flags]
+    public enum MarkerViews
+    {
+        None = 0,
+        Minimap = 1,
+        Hud = 2,
+        Both = Minimap | Hud,
+    }
+
+    internal static class MarkerViewsExtensions
+    {
+        // Track-key + right-click order: Both -> Minimap only -> HUD only -> Both.
+        public static MarkerViews Next(this MarkerViews views)
+        {
+            switch (views)
+            {
+                case MarkerViews.Both: return MarkerViews.Minimap;
+                case MarkerViews.Minimap: return MarkerViews.Hud;
+                default: return MarkerViews.Both;
+            }
+        }
+
+        public static string Describe(this MarkerViews views)
+        {
+            switch (views)
+            {
+                case MarkerViews.Minimap: return "minimap only";
+                case MarkerViews.Hud: return "HUD only";
+                default: return "minimap + HUD";
+            }
+        }
+
+        // Saved values are 1..3; anything else (old saves, typos) means both.
+        public static MarkerViews Parse(string value)
+        {
+            return int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int n) && n >= 1 && n <= 3
+                ? (MarkerViews)n
+                : MarkerViews.Both;
+        }
+    }
+
+    // Which map pins are tracked and how each is shown, plus home (the spawn point). Saved in the character's
+    // custom data, per world. Pins are saved as type and position (they have no ID of their own).
     internal static class PinTracker
     {
         private const string SaveKeyPrefix = "EdgeMapMarker.Tracked.";
-        private const string HomeKeyPrefix = "EdgeMapMarker.Home.";
+        private const string HomeKeyPrefix = "EdgeMapMarker.HomeViews.";
+
+        // Before per-target views, home was saved as "0"/"1" under this key. Still read so old saves carry over.
+        private const string LegacyHomeKeyPrefix = "EdgeMapMarker.Home.";
 
         // How long a pin the player deleted may take to reappear before tracking is dropped. Some mods
         // (e.g. SharedMap) replace pins by removing and re-adding them.
@@ -25,6 +71,7 @@ namespace EdgeMapMarker
         {
             public Vector3 Position;
             public Sprite Icon;
+            public MarkerViews Views;
 
             // Shown on the HUD marker: "Home", the pin's name (may be empty) or the player's name.
             public string Label;
@@ -37,6 +84,7 @@ namespace EdgeMapMarker
         {
             public Minimap.PinType Type;
             public Vector3 Position;
+            public MarkerViews Views = MarkerViews.Both;
             public Minimap.PinData Pin;
             public float RemovedAt = -1f;
         }
@@ -50,9 +98,16 @@ namespace EdgeMapMarker
             targets.Clear();
             Refresh(minimap);
 
-            if (IsHomeTracked())
+            MarkerViews homeViews = GetHomeViews();
+            if (homeViews != MarkerViews.None)
             {
-                targets.Add(new Target { Position = GetHomePosition(), Icon = minimap.GetSprite(Minimap.PinType.Bed), Label = "Home" });
+                targets.Add(new Target
+                {
+                    Position = GetHomePosition(),
+                    Icon = minimap.GetSprite(Minimap.PinType.Bed),
+                    Views = homeViews,
+                    Label = "Home",
+                });
             }
 
             foreach (Entry entry in Entries)
@@ -63,6 +118,7 @@ namespace EdgeMapMarker
                     {
                         Position = entry.Pin.m_pos,
                         Icon = entry.Pin.m_icon,
+                        Views = entry.Views,
                         Label = Localization.instance.Localize(entry.Pin.m_name),
                     });
                 }
@@ -78,7 +134,7 @@ namespace EdgeMapMarker
             pins.Clear();
             Refresh(minimap);
 
-            if (IsHomeTracked() && minimap.m_spawnPointPin != null)
+            if (GetHomeViews() != MarkerViews.None && minimap.m_spawnPointPin != null)
             {
                 pins.Add(minimap.m_spawnPointPin);
             }
@@ -101,22 +157,29 @@ namespace EdgeMapMarker
             return profile.HaveCustomSpawnPoint() ? profile.GetCustomSpawnPoint() : profile.GetHomePoint();
         }
 
-        // Home follows the config default until the player toggles it in this world.
-        private static bool IsHomeTracked()
+        // Home follows the config default until the player tracks or untracks it in this world.
+        private static MarkerViews GetHomeViews()
         {
             Player player = Player.m_localPlayer;
-            if (player != null && player.m_customData.TryGetValue(HomeKey, out string value))
+            if (player != null)
             {
-                return value == "1";
+                if (player.m_customData.TryGetValue(HomeKey, out string value))
+                {
+                    return value == "0" ? MarkerViews.None : MarkerViewsExtensions.Parse(value);
+                }
+                if (player.m_customData.TryGetValue(LegacyHomeKey, out string legacy))
+                {
+                    return legacy == "1" ? MarkerViews.Both : MarkerViews.None;
+                }
             }
-            return Plugin.TrackHomeByDefault.Value;
+            return Plugin.TrackHomeByDefault.Value ? MarkerViews.Both : MarkerViews.None;
         }
 
-        private static void ToggleHome(Minimap minimap)
+        private static void SetHomeViews(MarkerViews views)
         {
-            bool tracked = !IsHomeTracked();
-            Player.m_localPlayer.m_customData[HomeKey] = tracked ? "1" : "0";
-            ShowMessage(tracked ? "Tracking: Home" : "Stopped tracking: Home", minimap.GetSprite(Minimap.PinType.Bed));
+            Player player = Player.m_localPlayer;
+            player.m_customData[HomeKey] = ((int)views).ToString(CultureInfo.InvariantCulture);
+            player.m_customData.Remove(LegacyHomeKey);
         }
 
         // Loads the saved list for a new session, links entries to the minimap's pins, and drops entries
@@ -169,39 +232,22 @@ namespace EdgeMapMarker
             return null;
         }
 
-        private static void Toggle(Minimap minimap, Minimap.PinData pin)
-        {
-            Refresh(minimap);
-
-            Entry existing = Entries.Find(e => e.Pin == pin);
-            if (existing != null)
-            {
-                Entries.Remove(existing);
-                ShowMessage($"Stopped tracking: {PinLabel(pin)}", pin.m_icon);
-            }
-            else
-            {
-                Entries.Add(new Entry { Type = pin.m_type, Position = pin.m_pos, Pin = pin });
-                ShowMessage($"Tracking: {PinLabel(pin)}", pin.m_icon);
-            }
-            Save();
-        }
-
         private static string PinLabel(Minimap.PinData pin)
         {
             string name = Localization.instance.Localize(pin.m_name);
             return string.IsNullOrEmpty(name) ? "pin" : name;
         }
 
-        private static void ShowMessage(string text, Sprite icon)
+        internal static void ShowMessage(string text, Sprite icon)
         {
             Player.m_localPlayer?.Message(MessageHud.MessageType.TopLeft, text, 0, icon);
         }
 
         private static string SaveKey => SaveKeyPrefix + ZNet.instance.GetWorldUID();
         private static string HomeKey => HomeKeyPrefix + ZNet.instance.GetWorldUID();
+        private static string LegacyHomeKey => LegacyHomeKeyPrefix + ZNet.instance.GetWorldUID();
 
-        // Format: "type|x|z;type|x|z;..."
+        // Format: "type|x|z|views;..." (views was added later; entries without it show both).
         private static void Save()
         {
             Player player = Player.m_localPlayer;
@@ -224,7 +270,7 @@ namespace EdgeMapMarker
                 {
                     sb.Append(';');
                 }
-                sb.AppendFormat(CultureInfo.InvariantCulture, "{0}|{1}|{2}", (int)entry.Type, pos.x, pos.z);
+                sb.AppendFormat(CultureInfo.InvariantCulture, "{0}|{1}|{2}|{3}", (int)entry.Type, pos.x, pos.z, (int)entry.Views);
             }
             player.m_customData[SaveKey] = sb.ToString();
         }
@@ -240,19 +286,128 @@ namespace EdgeMapMarker
             foreach (string item in value.Split(';'))
             {
                 string[] parts = item.Split('|');
-                if (parts.Length == 3
+                if ((parts.Length == 3 || parts.Length == 4)
                     && int.TryParse(parts[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out int typeId)
                     && float.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out float x)
                     && float.TryParse(parts[2], NumberStyles.Float, CultureInfo.InvariantCulture, out float z))
                 {
-                    Entries.Add(new Entry { Type = (Minimap.PinType)typeId, Position = new Vector3(x, 0f, z) });
+                    Entries.Add(new Entry
+                    {
+                        Type = (Minimap.PinType)typeId,
+                        Position = new Vector3(x, 0f, z),
+                        Views = parts.Length == 4 ? MarkerViewsExtensions.Parse(parts[3]) : MarkerViews.Both,
+                    });
                 }
             }
         }
 
-        // Track-key + left click on the large map starts or stops tracking whatever is closest to the cursor:
-        // a pin, another player, or home (the spawn point). The game doesn't let the bed pin or player pins
-        // be clicked, so those two are found by distance here.
+        // What a track-key click on the large map lands on: the closest of a pin, another player, or home
+        // (the spawn point). The game doesn't let the bed pin or player pins be clicked, so those two are found
+        // by distance here.
+        private enum ClickKind { Nothing, Pin, Player, Home }
+
+        private static ClickKind FindClickTarget(Minimap minimap, out Minimap.PinData pin, out string playerName)
+        {
+            float radius = minimap.PinInteractRadius;
+            Vector3 pos = minimap.ScreenToWorldPoint(ZInput.pointerPosition);
+
+            pin = minimap.GetClosestPin(pos, radius);
+            float pinDistance = pin != null ? Utils.DistanceXZ(pos, pin.m_pos) : float.MaxValue;
+            float homeDistance = Utils.DistanceXZ(pos, GetHomePosition());
+            if (homeDistance >= radius)
+            {
+                homeDistance = float.MaxValue;
+            }
+            if (!PlayerTracker.TryFindClosest(pos, radius, out playerName, out float playerDistance))
+            {
+                playerDistance = float.MaxValue;
+            }
+
+            if (playerDistance < pinDistance && playerDistance < homeDistance)
+            {
+                return ClickKind.Player;
+            }
+            if (homeDistance < pinDistance)
+            {
+                return ClickKind.Home;
+            }
+            return pin != null ? ClickKind.Pin : ClickKind.Nothing;
+        }
+
+        // Track-key + left click: start tracking (shown on the minimap and the HUD), or stop tracking.
+        private static void ToggleTracked(Minimap minimap)
+        {
+            Refresh(minimap);
+            switch (FindClickTarget(minimap, out Minimap.PinData pin, out string playerName))
+            {
+                case ClickKind.Player:
+                    PlayerTracker.Toggle(minimap, playerName);
+                    break;
+
+                case ClickKind.Home:
+                {
+                    bool track = GetHomeViews() == MarkerViews.None;
+                    SetHomeViews(track ? MarkerViews.Both : MarkerViews.None);
+                    ShowMessage(track ? $"Tracking: Home ({MarkerViews.Both.Describe()})" : "Stopped tracking: Home",
+                        minimap.GetSprite(Minimap.PinType.Bed));
+                    break;
+                }
+
+                case ClickKind.Pin:
+                {
+                    Entry existing = Entries.Find(e => e.Pin == pin);
+                    if (existing != null)
+                    {
+                        Entries.Remove(existing);
+                        ShowMessage($"Stopped tracking: {PinLabel(pin)}", pin.m_icon);
+                    }
+                    else
+                    {
+                        Entries.Add(new Entry { Type = pin.m_type, Position = pin.m_pos, Pin = pin });
+                        ShowMessage($"Tracking: {PinLabel(pin)} ({MarkerViews.Both.Describe()})", pin.m_icon);
+                    }
+                    Save();
+                    break;
+                }
+            }
+        }
+
+        // Track-key + right click on a tracked target: cycle where it's shown. Does nothing on untracked targets.
+        private static void CycleViews(Minimap minimap)
+        {
+            Refresh(minimap);
+            switch (FindClickTarget(minimap, out Minimap.PinData pin, out string playerName))
+            {
+                case ClickKind.Player:
+                    PlayerTracker.CycleViews(minimap, playerName);
+                    break;
+
+                case ClickKind.Home:
+                {
+                    MarkerViews views = GetHomeViews();
+                    if (views != MarkerViews.None)
+                    {
+                        views = views.Next();
+                        SetHomeViews(views);
+                        ShowMessage($"Home: {views.Describe()}", minimap.GetSprite(Minimap.PinType.Bed));
+                    }
+                    break;
+                }
+
+                case ClickKind.Pin:
+                {
+                    Entry existing = Entries.Find(e => e.Pin == pin);
+                    if (existing != null)
+                    {
+                        existing.Views = existing.Views.Next();
+                        ShowMessage($"{PinLabel(pin)}: {existing.Views.Describe()}", pin.m_icon);
+                        Save();
+                    }
+                    break;
+                }
+            }
+        }
+
         [HarmonyPatch(typeof(Minimap), nameof(Minimap.OnMapLeftClick))]
         private static class TrackClickPatch
         {
@@ -263,35 +418,27 @@ namespace EdgeMapMarker
                     return true;
                 }
 
-                float radius = __instance.PinInteractRadius;
-                Vector3 pos = __instance.ScreenToWorldPoint(ZInput.pointerPosition);
-
-                Minimap.PinData pin = __instance.GetClosestPin(pos, radius);
-                float pinDistance = pin != null ? Utils.DistanceXZ(pos, pin.m_pos) : float.MaxValue;
-                float homeDistance = Utils.DistanceXZ(pos, GetHomePosition());
-                if (homeDistance >= radius)
-                {
-                    homeDistance = float.MaxValue;
-                }
-                if (!PlayerTracker.TryFindClosest(pos, radius, out string playerName, out float playerDistance))
-                {
-                    playerDistance = float.MaxValue;
-                }
-
-                if (playerDistance < pinDistance && playerDistance < homeDistance)
-                {
-                    PlayerTracker.Toggle(__instance, playerName);
-                }
-                else if (homeDistance < pinDistance)
-                {
-                    ToggleHome(__instance);
-                }
-                else if (pin != null)
-                {
-                    Toggle(__instance, pin);
-                }
+                ToggleTracked(__instance);
 
                 // Skip the game's click handling, so tracking doesn't also tick the pin's checkmark.
+                __instance.m_pinUpdateRequired = true;
+                return false;
+            }
+        }
+
+        // Right-click on the map normally deletes the pin under the cursor. With the track key held it cycles
+        // the target's views instead, and never deletes.
+        [HarmonyPatch(typeof(Minimap), nameof(Minimap.RemovePinUnderPointer))]
+        private static class CycleClickPatch
+        {
+            private static bool Prefix(Minimap __instance)
+            {
+                if (!ZInput.GetKey(Plugin.TrackKey.Value))
+                {
+                    return true;
+                }
+
+                CycleViews(__instance);
                 __instance.m_pinUpdateRequired = true;
                 return false;
             }

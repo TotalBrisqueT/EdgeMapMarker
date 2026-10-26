@@ -51,6 +51,11 @@ namespace EdgeMapMarker
                 PinTracker.GetTargets(minimap, Targets);
                 foreach (PinTracker.Target target in Targets)
                 {
+                    if ((target.Views & MarkerViews.Hud) == 0)
+                    {
+                        continue;
+                    }
+
                     float distance = Utils.DistanceXZ(player.transform.position, target.Position);
                     if (distance < Plugin.HudHideWithin.Value)
                     {

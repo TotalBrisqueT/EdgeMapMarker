@@ -15,15 +15,16 @@ Never lose your way home. When a tracked place is off your minimap, Edge Map Mar
 
 ## How to use
 
-Open the large map, hold **Left Alt** and **left-click**:
+Open the large map and hold **Left Alt**:
 
-| Click on | Does |
-| --- | --- |
-| A pin | Track it, or stop tracking it |
-| Your bed / spawn point | Toggle home tracking for this world |
-| Another player | Track them, or stop tracking them |
+| Click | On | Does |
+| --- | --- | --- |
+| Left-click | A pin, another player, or your bed / spawn point | Track it (shown on the minimap and the HUD), or stop tracking it |
+| Right-click | A tracked target | Cycle where it shows: minimap + HUD, minimap only, HUD only |
 
-When several are under the cursor, the closest one wins.
+When several are under the cursor, the closest one wins. Alt + right-click never deletes the pin.
+
+Left Alt + H shows or hides all HUD markers, and Left Alt + I shows or hides their icons.
 
 Other players can only be tracked while they're visible on the map (vanilla "Visible on map" checkbox, or a server-side mod that forces it).
 
@@ -39,10 +40,12 @@ All settings can be changed in game with a configuration manager (F1), or in `Be
 | Tracking | Track home by default | on | For worlds where you haven't toggled home yourself |
 | Tracking | Highlight tracked pins | on | Mark tracked pins on the maps |
 | Tracking | Highlight style | Badge | Badge (corner dot) or Ring |
-| Tracking | Highlight color | amber | Lower the alpha to make it fainter |
+| Tracking | Tracked highlight color | green | Lower the alpha to make it fainter |
 | HUD | Show HUD markers | on | Ping-style on-screen label for each tracked target |
 | HUD | Show icon | on | Map icon above the HUD label |
 | HUD | Hide within (m) | 20 | Hide a target's HUD label when you're this close |
+| HUD | Toggle HUD markers key | Left Alt + H | Show or hide all HUD markers |
+| HUD | Toggle HUD icons key | Left Alt + I | Show or hide the icons above HUD markers |
 | Players | Show player names | on | Name next to the distance |
 | Players | Color players | on | Per-player colour on the arrow, name and badge |
 

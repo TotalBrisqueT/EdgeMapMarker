@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.2
+
+- Per-target views: Left Alt + right-click a tracked target on the large map to cycle between minimap + HUD, minimap only and HUD only. New targets show on both.
+- Left Alt + right-click no longer deletes the pin under the cursor.
+
+## 0.1.1
+
+- Keys to show/hide all HUD markers (Left Alt + H) and the icons above them (Left Alt + I).
+- Tracked-pin highlight is now green by default (amber blended in with SharedMap's public markers).
+
 ## 0.1.0
 
 - First release.

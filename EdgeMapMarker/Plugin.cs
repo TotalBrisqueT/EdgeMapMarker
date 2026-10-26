@@ -11,7 +11,7 @@ namespace EdgeMapMarker
     {
         public const string PluginGuid = "SunPheonyx.EdgeMapMarker";
         public const string PluginName = "Edge Map Marker";
-        public const string PluginVersion = "0.1.0";
+        public const string PluginVersion = "0.1.2";
 
         internal static ManualLogSource Log;
 
@@ -24,6 +24,8 @@ namespace EdgeMapMarker
         internal static ConfigEntry<bool> ShowHudMarkers;
         internal static ConfigEntry<bool> HudShowIcon;
         internal static ConfigEntry<float> HudHideWithin;
+        internal static ConfigEntry<KeyboardShortcut> ToggleHudMarkersKey;
+        internal static ConfigEntry<KeyboardShortcut> ToggleHudIconsKey;
         internal static ConfigEntry<bool> ShowPlayerNames;
         internal static ConfigEntry<bool> ColorPlayers;
         internal static ConfigEntry<bool> HighlightTracked;
@@ -44,7 +46,8 @@ namespace EdgeMapMarker
                 new AcceptableValueRange<float>(0.3f, 1.5f)));
 
             TrackKey = Config.Bind("Tracking", "Track key", KeyCode.LeftAlt,
-                "Hold this and left-click a pin on the large map to track it. Do it again on the same pin to stop.");
+                "On the large map, hold this and left-click a pin, player or your spawn point to track it (or stop). " +
+                "Hold it and right-click a tracked one to cycle where it shows: minimap + HUD, minimap only, HUD only.");
             TrackHomeByDefault = Config.Bind("Tracking", "Track home by default", true,
                 "Track your bed (or the world spawn if you have no bed) in worlds where you haven't toggled it. " +
                 "Track-key + click near your spawn point on the large map to toggle it per world.");
@@ -54,6 +57,10 @@ namespace EdgeMapMarker
             HudHideWithin = Config.Bind("HUD", "Hide within (m)", 20f, new ConfigDescription(
                 "Hide a target's HUD marker when you're closer than this.",
                 new AcceptableValueRange<float>(0f, 200f)));
+            ToggleHudMarkersKey = Config.Bind("HUD", "Toggle HUD markers key", new KeyboardShortcut(KeyCode.H, KeyCode.LeftAlt),
+                "Press to show or hide all HUD markers (flips 'Show HUD markers').");
+            ToggleHudIconsKey = Config.Bind("HUD", "Toggle HUD icons key", new KeyboardShortcut(KeyCode.I, KeyCode.LeftAlt),
+                "Press to show or hide the icons above HUD markers (flips 'Show icon').");
 
             ShowPlayerNames = Config.Bind("Players", "Show player names", true,
                 "Show a tracked player's name next to the distance on their edge marker.");
@@ -65,11 +72,53 @@ namespace EdgeMapMarker
                 "Mark tracked pins on the large map and the minimap.");
             HighlightStyleSetting = Config.Bind("Tracking", "Highlight style", HighlightStyle.Badge,
                 "Badge: a small dot in the pin's top-right corner. Ring: a ring around the pin.");
-            HighlightColor = Config.Bind("Tracking", "Highlight color", new Color(1f, 0.75f, 0.2f, 0.6f),
+            HighlightColor = Config.Bind("Tracking", "Tracked highlight color", new Color(0.3f, 0.95f, 0.4f, 1f),
                 "Color of the tracked-pin highlight. Lower the alpha to make it fainter.");
 
             _harmony = Harmony.CreateAndPatchAll(typeof(Plugin).Assembly, PluginGuid);
             Log.LogInfo($"{PluginName} {PluginVersion} loaded");
+        }
+
+        private void Update()
+        {
+            if (Player.m_localPlayer == null || IsTyping())
+            {
+                return;
+            }
+
+            if (IsPressed(ToggleHudMarkersKey.Value))
+            {
+                ShowHudMarkers.Value = !ShowHudMarkers.Value;
+                Player.m_localPlayer.Message(MessageHud.MessageType.TopLeft, "HUD markers: " + (ShowHudMarkers.Value ? "on" : "off"));
+            }
+            if (IsPressed(ToggleHudIconsKey.Value))
+            {
+                HudShowIcon.Value = !HudShowIcon.Value;
+                Player.m_localPlayer.Message(MessageHud.MessageType.TopLeft, "HUD icons: " + (HudShowIcon.Value ? "on" : "off"));
+            }
+        }
+
+        // Keys shouldn't fire while the player is typing in chat, the console or a text box.
+        private static bool IsTyping()
+        {
+            return (Chat.instance != null && Chat.instance.HasFocus()) || Console.IsVisible() || TextInput.IsVisible() || Minimap.InTextInput();
+        }
+
+        // Read through the game's input layer (it handles key rebinding and the new input system).
+        private static bool IsPressed(KeyboardShortcut shortcut)
+        {
+            if (shortcut.MainKey == KeyCode.None || !ZInput.GetKeyDown(shortcut.MainKey, logWarning: false))
+            {
+                return false;
+            }
+            foreach (KeyCode modifier in shortcut.Modifiers)
+            {
+                if (!ZInput.GetKey(modifier, logWarning: false))
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         private void OnDestroy()

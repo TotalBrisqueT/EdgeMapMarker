@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 
 namespace EdgeMapMarker
@@ -26,7 +27,8 @@ namespace EdgeMapMarker
             new Color(0.62f, 0.62f, 1f),   // lavender
         };
 
-        private static readonly HashSet<string> Names = new HashSet<string>();
+        // Tracked player names and where each is shown.
+        private static readonly Dictionary<string, MarkerViews> Names = new Dictionary<string, MarkerViews>();
         private static readonly List<ZNet.PlayerInfo> Players = new List<ZNet.PlayerInfo>();
         private static Minimap _loadedFor;
 
@@ -40,12 +42,13 @@ namespace EdgeMapMarker
             Sprite icon = minimap.GetSprite(Minimap.PinType.Player);
             foreach (ZNet.PlayerInfo player in Players)
             {
-                if (Names.Contains(player.m_name))
+                if (Names.TryGetValue(player.m_name, out MarkerViews views))
                 {
                     targets.Add(new PinTracker.Target
                     {
                         Position = player.m_position,
                         Icon = icon,
+                        Views = views,
                         Label = player.m_name,
                         PlayerName = player.m_name,
                     });
@@ -64,7 +67,7 @@ namespace EdgeMapMarker
             int count = Mathf.Min(Players.Count, minimap.m_playerPins.Count);
             for (int i = 0; i < count; i++)
             {
-                if (Names.Contains(Players[i].m_name))
+                if (Names.ContainsKey(Players[i].m_name))
                 {
                     pins.Add(minimap.m_playerPins[i]);
                 }
@@ -90,17 +93,34 @@ namespace EdgeMapMarker
             return name != null;
         }
 
+        // Start tracking (shown on the minimap and the HUD), or stop tracking.
         public static void Toggle(Minimap minimap, string name)
         {
             Refresh(minimap);
-            bool tracked = Names.Add(name);
-            if (!tracked)
+            Sprite icon = minimap.GetSprite(Minimap.PinType.Player);
+            if (Names.Remove(name))
             {
-                Names.Remove(name);
+                PinTracker.ShowMessage("Stopped tracking: " + name, icon);
+            }
+            else
+            {
+                Names[name] = MarkerViews.Both;
+                PinTracker.ShowMessage($"Tracking: {name} ({MarkerViews.Both.Describe()})", icon);
             }
             Save();
-            Player.m_localPlayer?.Message(MessageHud.MessageType.TopLeft,
-                (tracked ? "Tracking: " : "Stopped tracking: ") + name, 0, minimap.GetSprite(Minimap.PinType.Player));
+        }
+
+        // Cycle where a tracked player is shown. Does nothing for untracked players.
+        public static void CycleViews(Minimap minimap, string name)
+        {
+            Refresh(minimap);
+            if (Names.TryGetValue(name, out MarkerViews views))
+            {
+                views = views.Next();
+                Names[name] = views;
+                PinTracker.ShowMessage($"{name}: {views.Describe()}", minimap.GetSprite(Minimap.PinType.Player));
+                Save();
+            }
         }
 
         // FNV-1a hash of the lower-cased name: stable across machines and game runs, unlike string.GetHashCode.
@@ -135,7 +155,8 @@ namespace EdgeMapMarker
 
         private static string SaveKey => SaveKeyPrefix + ZNet.instance.GetWorldUID();
 
-        // Format: names separated by '\n' (character names can't contain line breaks).
+        // Format: one "name\tviews" per line (character names can't contain tabs or line breaks). Lines without
+        // views come from before per-target views and show both.
         private static void Save()
         {
             Player player = Player.m_localPlayer;
@@ -146,11 +167,19 @@ namespace EdgeMapMarker
             if (Names.Count == 0)
             {
                 player.m_customData.Remove(SaveKey);
+                return;
             }
-            else
+
+            StringBuilder sb = new StringBuilder();
+            foreach (KeyValuePair<string, MarkerViews> entry in Names)
             {
-                player.m_customData[SaveKey] = string.Join("\n", Names);
+                if (sb.Length > 0)
+                {
+                    sb.Append('\n');
+                }
+                sb.Append(entry.Key).Append('\t').Append((int)entry.Value);
             }
+            player.m_customData[SaveKey] = sb.ToString();
         }
 
         private static void Load()
@@ -158,11 +187,12 @@ namespace EdgeMapMarker
             Names.Clear();
             if (Player.m_localPlayer.m_customData.TryGetValue(SaveKey, out string value))
             {
-                foreach (string name in value.Split('\n'))
+                foreach (string line in value.Split('\n'))
                 {
-                    if (name.Length > 0)
+                    string[] parts = line.Split('\t');
+                    if (parts[0].Length > 0)
                     {
-                        Names.Add(name);
+                        Names[parts[0]] = parts.Length > 1 ? MarkerViewsExtensions.Parse(parts[1]) : MarkerViews.Both;
                     }
                 }
             }

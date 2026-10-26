@@ -47,3 +47,8 @@ What follows from that:
 - [x] Replace the placeholder icon (tools/IconDraw.cs draws it)
 - [x] Ping-style HUD markers for tracked targets
 - [ ] Test HUD markers in game: placement, edge pinning when off-screen, overlap with several targets
+- [x] HUD toggle keys: Left Alt + H (all markers), Left Alt + I (icons) (0.1.1)
+- [x] Green tracked-pin highlight by default (0.1.1)
+- [x] Per-target views: Alt + right-click cycles minimap + HUD / minimap only / HUD only (0.1.2)
+- [ ] Test 0.1.2 in game: cycling views, Alt + right-click doesn't delete, views survive relog
+- [ ] Check Alt + H / Alt + I don't clash with anything in game

@@ -5,7 +5,7 @@
     <AssemblyName>EdgeMapMarker</AssemblyName>
     <RootNamespace>EdgeMapMarker</RootNamespace>
     <!-- Also update Plugin.PluginVersion and CHANGELOG.md when this changes. -->
-    <Version>0.1.0</Version>
+    <Version>0.1.2</Version>
     <LangVersion>latest</LangVersion>
     <Nullable>disable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>

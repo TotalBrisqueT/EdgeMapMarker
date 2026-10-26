@@ -59,6 +59,11 @@ namespace EdgeMapMarker
             int used = 0;
             foreach (PinTracker.Target target in Targets)
             {
+                if ((target.Views & MarkerViews.Minimap) == 0)
+                {
+                    continue;
+                }
+
                 // Same world -> minimap conversion the game uses for its own pins.
                 __instance.WorldToMapPoint(target.Position, out float mx, out float my);
                 Vector2 offset = __instance.MapPointToLocalGuiPos(mx, my, map.uvRect, rect) - center;
