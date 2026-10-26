@@ -1,20 +1,35 @@
 # To do
 
-## Next session
+## How this will be used
 
-- [ ] **Test the edge marker in game.** Built and deployed but not yet seen. Check edge placement, size, direction while turning, minimap zoom, and the hand-off to the real bed pin when back in range. Commit `EdgeMarker.cs` once it looks right.
-- [ ] **Check how it works on a server / in multiplayer.**
-  - Dedicated server and someone else's hosted world: does the bed/spawn lookup still work as a client?
-  - Does the mod need to be on the server at all, or only on clients?
-  - Shared map pins (from cartography table): can they be tracked?
-  - Players without the mod joining: no errors or version-mismatch kicks.
-- [ ] **Add context for how I plan to use this.** Who plays with it, on what kind of server, and what I mainly want to track, so the design and defaults fit.
+- Three players. One hosts the world from the game; the other two join through the in-game friends list (no dedicated server).
+- Built for our group first. Making it public on Thunderstore is fine, since that's where our modlist already comes from (r2modman).
+- Our modlist: BepInExPack_Valheim, SharedMap (TXC), BetterNetworking_Valheim, Jotunn, MultiUserChest, CraftFromContainersEvolved, Quick_Stack_Store_Sort_Trash_Restock, AutoStore, KeepInventoryOnDeath.
+
+What follows from that:
+- **Client-side only.** Each of us installs it if we want it; the host doesn't need it to make it work for the others, and nothing is synced.
+- **Test as both host and joining player.** The host is also a client, so both cases run the same minimap code, but the joining player is the one to check the bed lookup on.
+- **SharedMap compatibility.** SharedMap shares pins between us, so pins from it must be trackable. Check what those pins look like to the game (own pin vs. shared pin) once tracking exists.
+- **No Jotunn dependency.** It's in our list already, but the mod doesn't need it; staying plain BepInEx keeps it usable for anyone.
+- **If published:** tag it Client-side and AI Generated on Thunderstore.
+
+## Next
+
+- [x] Test the edge marker in game (works: bed icon on the minimap edge toward spawn)
+- [x] Check how it works on a server / in multiplayer (client-side only; nothing needs syncing)
+- [x] Add context for how I plan to use this
+- [ ] Test in a real session: host and a joining player both check the marker points at their own bed
 
 ## Later
 
-- [ ] Arrow pointing outward from the edge icon
-- [ ] Distance label (m / km)
-- [ ] Track any pin (modifier + click on the large map), saved per character and world
-- [ ] Config toggles: icon, arrow, distance, size, opacity, color, units, track key, bed fallback, hide in dungeons
+- [x] Arrow pointing outward from the edge icon
+- [x] Distance label (m / km)
+- [x] Marker size setting (default 0.7)
+- [ ] Make the marker easier to see (outline or tint) and keep it clear of the biome name on the top edge
+- [ ] Track any pin (modifier + click on the large map), saved per character and world, by position and type
+- [ ] Decide what happens to a tracked shared pin when the map's "shared pins" toggle is off
+- [ ] Track another player (their map position, when they share it)
+- [x] Config toggles: icon, arrow, distance, size
+- [ ] More config: opacity, color, units, track key, bed fallback, hide in dungeons
 - [ ] Thunderstore packaging: manifest, README, icon, zip
 - [ ] Settle on the mod name ("Edge Map Marker" is a working name)
