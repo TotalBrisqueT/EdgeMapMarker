@@ -40,5 +40,8 @@ What follows from that:
 - [x] Config toggles: icon, arrow, distance, size
 - [x] Config: track key, track home by default, highlight on/off, style and color
 - [ ] More config: marker opacity and color, units, hide in dungeons
-- [ ] Thunderstore packaging: manifest, README, icon, zip
-- [ ] Settle on the mod name ("Edge Map Marker" is a working name)
+- [x] Thunderstore packaging: manifest, README, icon, zip (Release build writes dist\EdgeMapMarker-<version>.zip)
+- [x] Settle on the mod name: Edge Map Marker
+- [ ] Group test from the local zip (mod manager: Settings > Import local mod), then upload to Thunderstore
+- [ ] Optional: README note that MapTracker also uses Alt+click, so change one mod's key if using both
+- [ ] Optional: replace the placeholder icon

@@ -4,6 +4,7 @@
     <TargetFramework>netstandard2.1</TargetFramework>
     <AssemblyName>EdgeMapMarker</AssemblyName>
     <RootNamespace>EdgeMapMarker</RootNamespace>
+    <!-- Also update Plugin.PluginVersion and CHANGELOG.md when this changes. -->
     <Version>0.1.0</Version>
     <LangVersion>latest</LangVersion>
     <Nullable>disable</Nullable>
@@ -47,6 +48,26 @@
     <Reference Include="UnityEngine.TextRenderingModule" HintPath="$(ManagedDir)\UnityEngine.TextRenderingModule.dll" Private="false" />
     <Reference Include="Unity.TextMeshPro" HintPath="$(ManagedDir)\Unity.TextMeshPro.dll" Private="false" />
   </ItemGroup>
+
+  <!-- Thunderstore package details. The manifest is generated from these on every Release build. -->
+  <PropertyGroup>
+    <ThunderstoreName>EdgeMapMarker</ThunderstoreName>
+    <ThunderstoreDescription>Keeps home, your chosen pins and friends on the edge of your minimap, with an arrow and distance, so you always know which way to go. Client-side.</ThunderstoreDescription>
+    <ThunderstoreDependency>denikson-BepInExPack_Valheim-5.4.2351</ThunderstoreDependency>
+    <RepoRoot>$(MSBuildProjectDirectory)\..</RepoRoot>
+    <PackageStageDir>$(RepoRoot)\dist\stage</PackageStageDir>
+  </PropertyGroup>
+
+  <!-- Release builds also produce dist\EdgeMapMarker-<version>.zip, ready to upload to Thunderstore. -->
+  <Target Name="ThunderstorePackage" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
+    <RemoveDir Directories="$(PackageStageDir)" />
+    <MakeDir Directories="$(PackageStageDir)\plugins" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(PackageStageDir)\plugins" />
+    <Copy SourceFiles="$(RepoRoot)\README.md;$(RepoRoot)\CHANGELOG.md;$(RepoRoot)\thunderstore\icon.png" DestinationFolder="$(PackageStageDir)" />
+    <WriteLinesToFile File="$(PackageStageDir)\manifest.json" Overwrite="true" Lines="{;  &quot;name&quot;: &quot;$(ThunderstoreName)&quot;,;  &quot;version_number&quot;: &quot;$(Version)&quot;,;  &quot;website_url&quot;: &quot;&quot;,;  &quot;description&quot;: &quot;$(ThunderstoreDescription)&quot;,;  &quot;dependencies&quot;: [&quot;$(ThunderstoreDependency)&quot;];}" />
+    <ZipDirectory SourceDirectory="$(PackageStageDir)" DestinationFile="$(RepoRoot)\dist\$(ThunderstoreName)-$(Version).zip" Overwrite="true" />
+    <Message Importance="high" Text="Packaged $(RepoRoot)\dist\$(ThunderstoreName)-$(Version).zip" />
+  </Target>
 
   <!-- After every build, copy the DLL into the r2modman Dev profile so the next game launch picks it up. -->
   <Target Name="DeployToProfile" AfterTargets="Build" Condition="Exists('$(ProfileDir)\BepInEx')">
