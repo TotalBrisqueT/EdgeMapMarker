@@ -21,6 +21,9 @@ namespace EdgeMapMarker
         internal static ConfigEntry<float> MarkerScale;
         internal static ConfigEntry<KeyCode> TrackKey;
         internal static ConfigEntry<bool> TrackHomeByDefault;
+        internal static ConfigEntry<bool> ShowHudMarkers;
+        internal static ConfigEntry<bool> HudShowIcon;
+        internal static ConfigEntry<float> HudHideWithin;
         internal static ConfigEntry<bool> ShowPlayerNames;
         internal static ConfigEntry<bool> ColorPlayers;
         internal static ConfigEntry<bool> HighlightTracked;
@@ -45,6 +48,13 @@ namespace EdgeMapMarker
             TrackHomeByDefault = Config.Bind("Tracking", "Track home by default", true,
                 "Track your bed (or the world spawn if you have no bed) in worlds where you haven't toggled it. " +
                 "Track-key + click near your spawn point on the large map to toggle it per world.");
+            ShowHudMarkers = Config.Bind("HUD", "Show HUD markers", true,
+                "Show a ping-style label on screen at each tracked target, with its name and distance.");
+            HudShowIcon = Config.Bind("HUD", "Show icon", true, "Show the target's map icon above its HUD label.");
+            HudHideWithin = Config.Bind("HUD", "Hide within (m)", 20f, new ConfigDescription(
+                "Hide a target's HUD marker when you're closer than this.",
+                new AcceptableValueRange<float>(0f, 200f)));
+
             ShowPlayerNames = Config.Bind("Players", "Show player names", true,
                 "Show a tracked player's name next to the distance on their edge marker.");
             ColorPlayers = Config.Bind("Players", "Color players", true,

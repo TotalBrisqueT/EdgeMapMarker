@@ -46,6 +46,7 @@ namespace EdgeMapMarker
                     {
                         Position = player.m_position,
                         Icon = icon,
+                        Label = player.m_name,
                         PlayerName = player.m_name,
                     });
                 }

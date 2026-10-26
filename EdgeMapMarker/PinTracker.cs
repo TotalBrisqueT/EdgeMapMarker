@@ -26,6 +26,9 @@ namespace EdgeMapMarker
             public Vector3 Position;
             public Sprite Icon;
 
+            // Shown on the HUD marker: "Home", the pin's name (may be empty) or the player's name.
+            public string Label;
+
             // Set when the target is another player.
             public string PlayerName;
         }
@@ -49,14 +52,19 @@ namespace EdgeMapMarker
 
             if (IsHomeTracked())
             {
-                targets.Add(new Target { Position = GetHomePosition(), Icon = minimap.GetSprite(Minimap.PinType.Bed) });
+                targets.Add(new Target { Position = GetHomePosition(), Icon = minimap.GetSprite(Minimap.PinType.Bed), Label = "Home" });
             }
 
             foreach (Entry entry in Entries)
             {
                 if (entry.Pin != null)
                 {
-                    targets.Add(new Target { Position = entry.Pin.m_pos, Icon = entry.Pin.m_icon });
+                    targets.Add(new Target
+                    {
+                        Position = entry.Pin.m_pos,
+                        Icon = entry.Pin.m_icon,
+                        Label = Localization.instance.Localize(entry.Pin.m_name),
+                    });
                 }
             }
 

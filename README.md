@@ -8,6 +8,7 @@ Never lose your way home. When a tracked place is off your minimap, Edge Map Mar
 - **Track any map pin.** Your own markers, discovered locations, boss pins and shared markers.
 - **Track other players.** Their marker shows their name and distance, in a colour picked from their character name, so everyone with the mod sees the same player in the same colour.
 - **Track as many as you like.** Every tracked target that's off the minimap gets its own edge marker.
+- **HUD markers.** Each tracked target also gets a ping-style label on screen with its icon, name and distance, held at the screen edge when it's behind you.
 - **Tracked pins are marked** with a small badge (or a ring) on both the large map and the minimap.
 - **Saved per character and per world.**
 - **Client-side only.** Nothing is synced. Install it on the clients that want it; the server and other players don't need it.
@@ -39,6 +40,9 @@ All settings can be changed in game with a configuration manager (F1), or in `Be
 | Tracking | Highlight tracked pins | on | Mark tracked pins on the maps |
 | Tracking | Highlight style | Badge | Badge (corner dot) or Ring |
 | Tracking | Highlight color | amber | Lower the alpha to make it fainter |
+| HUD | Show HUD markers | on | Ping-style on-screen label for each tracked target |
+| HUD | Show icon | on | Map icon above the HUD label |
+| HUD | Hide within (m) | 20 | Hide a target's HUD label when you're this close |
 | Players | Show player names | on | Name next to the distance |
 | Players | Color players | on | Per-player colour on the arrow, name and badge |
 

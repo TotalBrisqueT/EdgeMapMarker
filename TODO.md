@@ -44,4 +44,6 @@ What follows from that:
 - [x] Settle on the mod name: Edge Map Marker
 - [ ] Group test from the local zip (mod manager: Settings > Import local mod), then upload to Thunderstore
 - [ ] Optional: README note that MapTracker also uses Alt+click, so change one mod's key if using both
-- [ ] Optional: replace the placeholder icon
+- [x] Replace the placeholder icon (tools/IconDraw.cs draws it)
+- [x] Ping-style HUD markers for tracked targets
+- [ ] Test HUD markers in game: placement, edge pinning when off-screen, overlap with several targets

@@ -128,7 +128,7 @@ namespace EdgeMapMarker
             return offset * scale;
         }
 
-        private static string FormatDistance(float meters)
+        internal static string FormatDistance(float meters)
         {
             return meters < 1000f ? $"{meters:0} m" : $"{meters / 1000f:0.0} km";
         }
