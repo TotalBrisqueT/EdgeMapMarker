@@ -15,13 +15,15 @@ What follows from that:
 
 ## Publish to Thunderstore
 
+Published 1.0.0 on 2026-10-28: https://thunderstore.io/c/valheim/p/SunPheonyx/EdgeMapMarker/
+
 - [x] Finish the open in-game tests below (HUD markers, 0.1.2 views, SharedMap markers, player colours)
 - [x] Release version: 1.0.0 (update csproj `<Version>`, `Plugin.PluginVersion`, CHANGELOG.md)
 - [x] MapTracker Alt+click README note: skipped
-- [ ] Release build: `dotnet build EdgeMapMarker\EdgeMapMarker.csproj -c Release` makes `dist\EdgeMapMarker-<version>.zip`
-- [ ] Sign in at thunderstore.io and create a team (it becomes the author name, replacing "Unknown")
-- [ ] Valheim > Upload the zip; categories: Client-side, AI Generated, plus Tools or Misc
-- [ ] Check the listing (icon, README, dependency on denikson-BepInExPack_Valheim)
+- [x] Release build: `dotnet build EdgeMapMarker\EdgeMapMarker.csproj -c Release` makes `dist\EdgeMapMarker-<version>.zip`
+- [x] Sign in at thunderstore.io and create a team (it becomes the author name, replacing "Unknown")
+- [x] Valheim > Upload the zip; categories: Client-side, AI Generated, plus Tools or Misc
+- [x] Check the listing (icon, README, dependency on denikson-BepInExPack_Valheim)
 - [ ] Everyone removes the locally imported copy and installs the published one, so updates come through the mod manager
 
 ## Next
