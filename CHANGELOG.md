@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.0
+
+- First public release. Same features as 0.1.2, tested in a three-player session.
+
 ## 0.1.2
 
 - Per-target views: Left Alt + right-click a tracked target on the large map to cycle between minimap + HUD, minimap only and HUD only. New targets show on both.

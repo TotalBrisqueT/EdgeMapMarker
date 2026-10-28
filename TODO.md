@@ -13,12 +13,23 @@ What follows from that:
 - **No Jotunn dependency.** It's in our list already, but the mod doesn't need it; staying plain BepInEx keeps it usable for anyone.
 - **If published:** tag it Client-side and AI Generated on Thunderstore.
 
+## Publish to Thunderstore
+
+- [x] Finish the open in-game tests below (HUD markers, 0.1.2 views, SharedMap markers, player colours)
+- [x] Release version: 1.0.0 (update csproj `<Version>`, `Plugin.PluginVersion`, CHANGELOG.md)
+- [x] MapTracker Alt+click README note: skipped
+- [ ] Release build: `dotnet build EdgeMapMarker\EdgeMapMarker.csproj -c Release` makes `dist\EdgeMapMarker-<version>.zip`
+- [ ] Sign in at thunderstore.io and create a team (it becomes the author name, replacing "Unknown")
+- [ ] Valheim > Upload the zip; categories: Client-side, AI Generated, plus Tools or Misc
+- [ ] Check the listing (icon, README, dependency on denikson-BepInExPack_Valheim)
+- [ ] Everyone removes the locally imported copy and installs the published one, so updates come through the mod manager
+
 ## Next
 
 - [x] Test the edge marker in game (works: bed icon on the minimap edge toward spawn)
 - [x] Check how it works on a server / in multiplayer (client-side only; nothing needs syncing)
 - [x] Add context for how I plan to use this
-- [ ] Test in a real session: host and a joining player both check the marker points at their own bed
+- [x] Test in a real session: host and a joining player both check the marker points at their own bed
 
 ## Later
 
@@ -31,24 +42,24 @@ What follows from that:
 - [x] Mark tracked pins on the maps (corner badge, ring as an alternative style)
 - [x] Decide what happens to a tracked shared pin when the map's "shared pins" toggle is off (keeps tracking)
 - [x] SharedMap compatibility checked against its code; hiding the shared map no longer drops tracking of public markers
-- [ ] Test tracking a pin shared through SharedMap (public marker), including toggling "Server shared map" off and on
+- [x] Test tracking a pin shared through SharedMap (public marker), including toggling "Server shared map" off and on
 - [ ] Two quick Alt+clicks may open the game's "name a new pin" box; block it if it happens
 - [ ] Option to show the distance only on the nearest marker, since labels overlap when pins share a direction
 - [x] Track another player (their map position, when they share it), with name and a name-based colour
-- [ ] Test player tracking in a group session: everyone "Visible on map", same colours on every screen
+- [x] Test player tracking in a group session: everyone "Visible on map", same colours on every screen
 - [ ] If two of us get the same colour: per-player colour setting shared via the mod, or tweak the calculation
 - [x] Config toggles: icon, arrow, distance, size
 - [x] Config: track key, track home by default, highlight on/off, style and color
 - [ ] More config: marker opacity and color, units, hide in dungeons
 - [x] Thunderstore packaging: manifest, README, icon, zip (Release build writes dist\EdgeMapMarker-<version>.zip)
 - [x] Settle on the mod name: Edge Map Marker
-- [ ] Group test from the local zip (mod manager: Settings > Import local mod), then upload to Thunderstore
+- [x] Group test from the local zip (mod manager: Settings > Import local mod); see "Publish to Thunderstore" below
 - [ ] Optional: README note that MapTracker also uses Alt+click, so change one mod's key if using both
 - [x] Replace the placeholder icon (tools/IconDraw.cs draws it)
 - [x] Ping-style HUD markers for tracked targets
-- [ ] Test HUD markers in game: placement, edge pinning when off-screen, overlap with several targets
+- [x] Test HUD markers in game: placement, edge pinning when off-screen, overlap with several targets
 - [x] HUD toggle keys: Left Alt + H (all markers), Left Alt + I (icons) (0.1.1)
 - [x] Green tracked-pin highlight by default (0.1.1)
 - [x] Per-target views: Alt + right-click cycles minimap + HUD / minimap only / HUD only (0.1.2)
-- [ ] Test 0.1.2 in game: cycling views, Alt + right-click doesn't delete, views survive relog
-- [ ] Check Alt + H / Alt + I don't clash with anything in game
+- [x] Test 0.1.2 in game: cycling views, Alt + right-click doesn't delete, views survive relog
+- [x] Check Alt + H / Alt + I don't clash with anything in game

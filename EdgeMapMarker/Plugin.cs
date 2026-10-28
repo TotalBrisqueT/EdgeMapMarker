@@ -11,7 +11,7 @@ namespace EdgeMapMarker
     {
         public const string PluginGuid = "SunPheonyx.EdgeMapMarker";
         public const string PluginName = "Edge Map Marker";
-        public const string PluginVersion = "0.1.2";
+        public const string PluginVersion = "1.0.0";
 
         internal static ManualLogSource Log;
 
