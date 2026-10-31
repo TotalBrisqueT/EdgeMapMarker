@@ -2,6 +2,8 @@
 
 Never lose your way home. When a tracked place is off your minimap, Edge Map Marker pins its icon to the edge of the minimap in that direction, with an arrow and the distance.
 
+![Valheim gameplay with HUD labels for The Elder at 1.8 km and home at 41 m, and an edge marker on the minimap](https://raw.githubusercontent.com/TotalBrisqueT/EdgeMapMarker/main/docs/images/gameplay.webp)
+
 ## Features
 
 - **Home by default.** Your bed (or the world spawn if you have no bed) is tracked out of the box.
@@ -12,6 +14,14 @@ Never lose your way home. When a tracked place is off your minimap, Edge Map Mar
 - **Tracked pins are marked** with a small badge (or a ring) on both the large map and the minimap.
 - **Saved per character and per world.**
 - **Client-side only.** Nothing is synced. Install it on the clients that want it; the server and other players don't need it.
+
+Off-map targets sit on the minimap edge with an arrow and distance:
+
+![Minimap with The Elder's icon on the bottom-right edge, an arrow and a distance of 1.9 km](https://raw.githubusercontent.com/TotalBrisqueT/EdgeMapMarker/main/docs/images/minimap.png)
+
+Tracked pins get a badge on the map:
+
+![The Elder's pin on the large map with a green badge in its top-right corner](https://raw.githubusercontent.com/TotalBrisqueT/EdgeMapMarker/main/docs/images/tracked-pin.png)
 
 ## How to use
 
