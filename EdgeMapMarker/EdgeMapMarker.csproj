@@ -5,7 +5,7 @@
     <AssemblyName>EdgeMapMarker</AssemblyName>
     <RootNamespace>EdgeMapMarker</RootNamespace>
     <!-- Also update Plugin.PluginVersion and CHANGELOG.md when this changes. -->
-    <Version>1.0.0</Version>
+    <Version>1.0.1</Version>
     <LangVersion>latest</LangVersion>
     <Nullable>disable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -54,6 +54,7 @@
     <ThunderstoreName>EdgeMapMarker</ThunderstoreName>
     <ThunderstoreDescription>Keeps home, your chosen pins and friends on the edge of your minimap, with an arrow and distance, so you always know which way to go. Client-side.</ThunderstoreDescription>
     <ThunderstoreDependency>denikson-BepInExPack_Valheim-5.4.2351</ThunderstoreDependency>
+    <ThunderstoreWebsite>https://github.com/TotalBrisqueT/EdgeMapMarker</ThunderstoreWebsite>
     <RepoRoot>$(MSBuildProjectDirectory)\..</RepoRoot>
     <PackageStageDir>$(RepoRoot)\dist\stage</PackageStageDir>
   </PropertyGroup>
@@ -64,7 +65,7 @@
     <MakeDir Directories="$(PackageStageDir)\plugins" />
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(PackageStageDir)\plugins" />
     <Copy SourceFiles="$(RepoRoot)\README.md;$(RepoRoot)\CHANGELOG.md;$(RepoRoot)\thunderstore\icon.png" DestinationFolder="$(PackageStageDir)" />
-    <WriteLinesToFile File="$(PackageStageDir)\manifest.json" Overwrite="true" Lines="{;  &quot;name&quot;: &quot;$(ThunderstoreName)&quot;,;  &quot;version_number&quot;: &quot;$(Version)&quot;,;  &quot;website_url&quot;: &quot;&quot;,;  &quot;description&quot;: &quot;$(ThunderstoreDescription)&quot;,;  &quot;dependencies&quot;: [&quot;$(ThunderstoreDependency)&quot;];}" />
+    <WriteLinesToFile File="$(PackageStageDir)\manifest.json" Overwrite="true" Lines="{;  &quot;name&quot;: &quot;$(ThunderstoreName)&quot;,;  &quot;version_number&quot;: &quot;$(Version)&quot;,;  &quot;website_url&quot;: &quot;$(ThunderstoreWebsite)&quot;,;  &quot;description&quot;: &quot;$(ThunderstoreDescription)&quot;,;  &quot;dependencies&quot;: [&quot;$(ThunderstoreDependency)&quot;];}" />
     <ZipDirectory SourceDirectory="$(PackageStageDir)" DestinationFile="$(RepoRoot)\dist\$(ThunderstoreName)-$(Version).zip" Overwrite="true" />
     <Message Importance="high" Text="Packaged $(RepoRoot)\dist\$(ThunderstoreName)-$(Version).zip" />
   </Target>

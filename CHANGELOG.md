@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.1
+
+- New plugin ID, `SunPheonyx.EdgeMapMarker`. The config file gets a new name, so settings return to their defaults once. Tracked pins, players and home are not affected.
+
 ## 1.0.0
 
 - First public release. Same features as 0.1.2, tested in a three-player session.
