@@ -15,7 +15,7 @@ What follows from that:
 
 ## Publish to Thunderstore
 
-Published 1.0.0 on 2026-10-28: https://thunderstore.io/c/valheim/p/SunPheonyx/EdgeMapMarker/
+Published 1.0.0 on 2026-10-28 and 1.0.1 on 2026-11-01: https://thunderstore.io/c/valheim/p/SunPheonyx/EdgeMapMarker/
 
 - [x] Finish the open in-game tests below (HUD markers, 0.1.2 views, SharedMap markers, player colours)
 - [x] Release version: 1.0.0 (update csproj `<Version>`, `Plugin.PluginVersion`, CHANGELOG.md)
